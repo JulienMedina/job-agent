@@ -10,7 +10,8 @@
     "dev": "tsx src/run.ts",
     "repl": "node --import data:text/javascript,import('tsx/cjs/api').then(m=>m.register()).then(()=>import('repl')).then(r=>r.start())",
     "test-db": "tsx src/test-db.ts",
-    "test-wttj": "tsx src/test-wttj.ts"
+    "test-wttj": "tsx src/test-wttj.ts",
+    "start:server": "node dist/server.js"
   },
   "keywords": [],
   "author": "",

@@ -2,16 +2,19 @@ services:
   n8n:
     image: docker.n8n.io/n8nio/n8n:1.108.2
     restart: unless-stopped
-    ports: ["5678:5678"]
+    ports:
+      - "5678:5678"
     environment:
-      - N8N_HOST=localhost
-      - N8N_PROTOCOL=http
-      - N8N_PORT=5678
-      - GENERIC_TIMEZONE=Europe/Paris
-      - TZ=Europe/Paris
+      N8N_HOST: "${N8N_HOST:-localhost}"
+      N8N_PROTOCOL: "${N8N_PROTOCOL:-http}"
+      N8N_PORT: ${N8N_PORT:-5678}
+      GENERIC_TIMEZONE: "${GENERIC_TIMEZONE:-Europe/Paris}"
+      TZ: "${TZ:-Europe/Paris}"
+      N8N_ENCRYPTION_KEY: "${N8N_ENCRYPTION_KEY:?Set N8N_ENCRYPTION_KEY in .env}"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "${N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS:-true}"
+      N8N_SECURE_COOKIE: "${N8N_SECURE_COOKIE:-false}"
     volumes:
-      - n8n_data:/home/node/.n8n
-      - ./:/project
+      - n8n_data:/home/node/.n8n  # ✅ named volume recommandé
     depends_on:
       - scraper
 
@@ -19,16 +22,20 @@ services:
     image: mcr.microsoft.com/playwright:v1.55.0-noble
     restart: unless-stopped
     working_dir: /project
-    command:  bash -lc "npm ci || npm i && npm run build && npm run start:scraper"
+    command: bash -lc "npm ci || npm i && npm run build && npm run start:server"
+
+
     volumes:
       - ./:/project
     ports:
       - "3000:3000"
+    environment:
+      - RETENTION_DAYS=${RETENTION_DAYS:-90}
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/run || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/health || exit 1"]
       interval: 30s
       timeout: 5s
-      retries: 5
+      retries: 1
 
 volumes:
   n8n_data: {}

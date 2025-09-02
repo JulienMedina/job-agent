@@ -1,10 +1,11 @@
+import "./env.js";
 import nodemailer from "nodemailer";
 
 export async function sendDigest(jobs: any[]) {
   // Génération du HTML
   let html = `<h2>Top ${jobs.length} offres</h2>`;
   html += `<ul style="font-family: Arial, sans-serif; line-height:1.4">`;
-  
+
   for (const j of jobs) {
     html += `
       <li style="margin-bottom:12px">
@@ -16,22 +17,23 @@ export async function sendDigest(jobs: any[]) {
   }
   html += `</ul>`;
 
-  // Transporteur SMTP Gmail
+  // Transporteur SMTP configurable via variables d'environnement
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    service: process.env.SMTP_SERVICE || "gmail",
     auth: {
-      user: "julien.medina16@gmail.com",        // ⚠️ remplace par ton adresse Gmail
-      pass: "bfth zdau cnho lpmw",        // ⚠️ le mot de passe d’application
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
   });
 
   // Envoi
   await transporter.sendMail({
-    from: '"Job Agent" <julien.medina16@gmail.com>',
-    to: "julien.medina16@gmail.com",         // où tu veux recevoir les offres
+    from: process.env.MAIL_FROM || '"Job Agent" <no-reply@example.com>',
+    to: process.env.MAIL_TO || process.env.SMTP_USER || "",
     subject: "Digest des offres du jour",
     html,
   });
 
   console.log("📧 Email envoyé !");
 }
+
