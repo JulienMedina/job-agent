@@ -3,3 +3,5 @@ dist/
 .env
 .n8n/
 
+node_modules.bad-*/
+dist.bad-*/
