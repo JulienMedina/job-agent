@@ -13,6 +13,8 @@ services:
       N8N_ENCRYPTION_KEY: "${N8N_ENCRYPTION_KEY:?Set N8N_ENCRYPTION_KEY in .env}"
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "${N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS:-true}"
       N8N_SECURE_COOKIE: "${N8N_SECURE_COOKIE:-false}"
+      EXECUTIONS_TIMEOUT: "${EXECUTIONS_TIMEOUT:-600}"
+      EXECUTIONS_TIMEOUT_MAX: "${EXECUTIONS_TIMEOUT_MAX:-3600}"
     volumes:
       - n8n_data:/home/node/.n8n  # ✅ named volume recommandé
     depends_on:
