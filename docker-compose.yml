@@ -8,11 +8,15 @@ services:
       N8N_HOST: "${N8N_HOST:-localhost}"
       N8N_PROTOCOL: "${N8N_PROTOCOL:-http}"
       N8N_PORT: ${N8N_PORT:-5678}
+      WEBHOOK_URL: "${WEBHOOK_URL:-http://localhost:5678/}"
+      N8N_PROXY_HOPS: "${N8N_PROXY_HOPS:-1}"
       GENERIC_TIMEZONE: "${GENERIC_TIMEZONE:-Europe/Paris}"
       TZ: "${TZ:-Europe/Paris}"
       N8N_ENCRYPTION_KEY: "${N8N_ENCRYPTION_KEY:?Set N8N_ENCRYPTION_KEY in .env}"
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "${N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS:-true}"
       N8N_SECURE_COOKIE: "${N8N_SECURE_COOKIE:-false}"
+      EXECUTIONS_TIMEOUT: "${EXECUTIONS_TIMEOUT:-600}"
+      EXECUTIONS_TIMEOUT_MAX: "${EXECUTIONS_TIMEOUT_MAX:-3600}"
     volumes:
       - n8n_data:/home/node/.n8n  # ✅ named volume recommandé
     depends_on:
@@ -37,5 +41,44 @@ services:
       timeout: 5s
       retries: 1
 
+  n8n-mcp:
+    image: ghcr.io/czlonkowski/n8n-mcp:latest
+    platform: linux/arm64/v8
+    restart: unless-stopped
+    depends_on:
+      - n8n
+    environment:
+      MCP_MODE: ${MCP_MODE:-http}
+      USE_FIXED_HTTP: ${USE_FIXED_HTTP:-true}
+      PORT: ${MCP_PORT:-3333}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      AUTH_TOKEN: ${AUTH_TOKEN:?Set AUTH_TOKEN in .env}
+      N8N_API_URL: ${N8N_API_URL:-http://n8n:5678}
+      N8N_API_KEY: ${N8N_API_KEY:?Set N8N_API_KEY in .env}
+      WEBHOOK_SECURITY_MODE: ${WEBHOOK_SECURITY_MODE:-moderate}
+    ports:
+      - "${MCP_PORT:-3333}:${MCP_PORT:-3333}"
+    volumes:
+      - n8n_mcp_data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+process.env.PORT+'/health').then(r=>{if(!r.ok)process.exit(1);}).catch(()=>process.exit(1));"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  mcp-proxy:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - n8n-mcp
+    ports:
+      - "18080:8080"
+    environment:
+      AUTH_TOKEN: ${AUTH_TOKEN:?Set AUTH_TOKEN in .env}
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+
 volumes:
   n8n_data: {}
+  n8n_mcp_data: {}

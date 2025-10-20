@@ -1,0 +1,49 @@
+events {}
+
+http {
+  server {
+    listen 8080;
+    set $mcp_auth_header "Bearer ${AUTH_TOKEN}";
+
+    # CORS global
+    add_header Access-Control-Allow-Origin "*" always;
+    add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, DELETE" always;
+    add_header Access-Control-Allow-Headers "Content-Type, Authorization, Accept, Mcp-Session-Id" always;
+    add_header Access-Control-Expose-Headers "Mcp-Session-Id" always;
+
+    # Préflight
+    if ($request_method = OPTIONS) { return 204; }
+
+    # Endpoint MCP natif
+    location = /mcp {
+      proxy_set_header Authorization $mcp_auth_header;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_pass http://host.docker.internal:3333;  # sans suffixe
+    }
+
+    # Racine :
+    # - GET /  -> proxifie vers /
+    # - POST / -> réécrit vers /mcp puis proxifie
+    location = / {
+      proxy_set_header Authorization $mcp_auth_header;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+
+      # Réécriture autorisée (pas de proxy_pass dans l'if)
+      if ($request_method = POST) {
+        rewrite ^ /mcp break;
+      }
+
+      proxy_pass http://host.docker.internal:3333;  # sans suffixe
+    }
+
+    # Le reste (favicon, .well-known, etc.)
+    location / {
+      proxy_set_header Authorization $mcp_auth_header;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_pass http://host.docker.internal:3333;  # sans suffixe
+    }
+  }
+}
