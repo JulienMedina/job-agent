@@ -3,6 +3,7 @@ events {}
 http {
   server {
     listen 8080;
+    set $mcp_auth_header "Bearer ${AUTH_TOKEN}";
 
     # CORS global
     add_header Access-Control-Allow-Origin "*" always;
@@ -15,7 +16,7 @@ http {
 
     # Endpoint MCP natif
     location = /mcp {
-      proxy_set_header Authorization "Bearer 91660f57940903d3f583c0576fb223f7dc1b8504e09bce4bb042e6234d934222";
+      proxy_set_header Authorization $mcp_auth_header;
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
       proxy_pass http://host.docker.internal:3333;  # sans suffixe
@@ -25,7 +26,7 @@ http {
     # - GET /  -> proxifie vers /
     # - POST / -> réécrit vers /mcp puis proxifie
     location = / {
-      proxy_set_header Authorization "Bearer 91660f57940903d3f583c0576fb223f7dc1b8504e09bce4bb042e6234d934222";
+      proxy_set_header Authorization $mcp_auth_header;
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
 
@@ -39,7 +40,7 @@ http {
 
     # Le reste (favicon, .well-known, etc.)
     location / {
-      proxy_set_header Authorization "Bearer 91660f57940903d3f583c0576fb223f7dc1b8504e09bce4bb042e6234d934222";
+      proxy_set_header Authorization $mcp_auth_header;
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
       proxy_pass http://host.docker.internal:3333;  # sans suffixe
