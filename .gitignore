@@ -5,3 +5,13 @@ dist/
 
 node_modules.bad-*/
 dist.bad-*/
+
+.env
+.env.*
+.env.local
+data.db
+*.db
+*.db-*
+node_modules/
+n8n_data/
+
